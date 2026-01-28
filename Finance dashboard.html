@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invenia | Finance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-color: #0f172a; 
+            background-size: cover;
+            height: 100vh; 
+            width: 100vw;
+            overflow: hidden; 
+            color: #f8fafc;
+        }
+
+        /* COMPACT CARD */
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .glass-card:hover { 
+            transform: translateY(-5px) scale(1.02); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255,255,255,0.3);
+            z-index: 10;
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        /* BORDERS */
+        .border-l-thick { border-left-width: 3px; }
+        .border-teal { border-left-color: #2dd4bf; }
+        .border-purple { border-left-color: #a855f7; }
+        .border-green { border-left-color: #22c55e; }
+        .border-blue { border-left-color: #3b82f6; } 
+        .border-orange { border-left-color: #f97316; }
+        .border-pink { border-left-color: #ec4899; }
+        .border-indigo { border-left-color: #6366f1; }
+        .border-red { border-left-color: #ef4444; }
+        .border-cyan { border-left-color: #06b6d4; }
+        .border-yellow { border-left-color: #eab308; }
+        .border-lime { border-left-color: #84cc16; }
+
+        .glass-modal {
+            background: rgba(15, 23, 42, 0.98); 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        select, input {
+            background: rgba(30, 41, 59, 0.95) !important;
+            color: #fff !important;
+            border: 1px solid rgba(148, 163, 184, 0.3) !important;
+            outline: none;
+        }
+        select:focus, input:focus { border-color: #009ca6 !important; }
+
+        #fySelector {
+            background: transparent !important;
+            border: none !important;
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8; 
+            cursor: pointer;
+            padding: 0;
+            margin-left: 4px;
+        }
+        #fySelector option { background-color: #0f172a; color: white; }
+        #fySelector:hover { color: #fff; }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* AESTHETIC TABLE */
+        .aesthetic-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .aesthetic-table th {
+            font-size: 6.5px; font-weight: 700; text-transform: uppercase; color: #94a3b8;
+            padding: 4px 1px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(15, 23, 42, 0.6); white-space: normal; line-height: 1; vertical-align: bottom; overflow: hidden;
+        }
+        .aesthetic-table td {
+            font-size: 8px; padding: 3px 1px; text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.03); height: 22px;
+        }
+        
+        /* FIRST COLUMN (Period) - 55px Width */
+        .aesthetic-table th:first-child,
+        .aesthetic-table td:first-child {
+            width: 55px; text-align: left; padding-left: 5px;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            color: #e2e8f0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .aesthetic-table th:not(:first-child), .aesthetic-table td:not(:first-child) { width: auto; }
+
+        /* Status Pills */
+        .pill-done { display: inline-block; border-radius: 2px; background: #10b981; width: 85%; height: 6px; box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); }
+        .pill-pending { display: inline-block; border-radius: 2px; background: #f59e0b; width: 85%; height: 6px; box-shadow: 0 0 5px rgba(245, 158, 11, 0.4); }
+        .pill-progress { display: inline-block; border-radius: 2px; background: #3b82f6; width: 85%; height: 6px; box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); }
+        
+        .legend-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+        .dot-green { background: #10b981; } .dot-amber { background: #f59e0b; } .dot-blue { background: #3b82f6; }
+    </style>
+</head>
+<body class="p-3 h-screen flex flex-col box-border overflow-hidden">
+
+    <header class="flex justify-between items-center mb-3 shrink-0 h-[50px] px-3 border-b border-slate-700/50 bg-[#0f172a]/80 backdrop-blur-md rounded-lg">
+        <div class="flex items-center gap-4">
+            <div class="px-3 py-1.5 rounded-md bg-white shadow-md">
+                <img src="https://inveniatech.com/wp-content/uploads/2024/08/Invenia-logo.png" alt="Invenia" class="h-5 w-auto object-contain">
+            </div>
+            <div class="flex flex-col justify-center">
+                <h1 class="text-lg font-extrabold text-white tracking-wide uppercase leading-none">Finance Dashboard</h1>
+                <div class="flex items-center">
+                    <span class="text-[9px] font-medium text-slate-400 tracking-wider">Status Overview • </span>
+                    <select id="fySelector" onchange="switchFiscalYear()">
+                        <option value="25-26" selected>FY 25-26</option>
+                        <option value="24-25">FY 24-25</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 bg-slate-800/80 px-3 py-1.5 rounded border border-slate-600">
+                <div class="flex items-center"><span class="legend-dot dot-green"></span><span class="text-[9px] text-slate-300 font-bold uppercase">Done</span></div>
+                <div class="flex items-center"><span class="legend-dot dot-blue"></span><span class="text-[9px] text-slate-300 font-bold uppercase">In Progress</span></div>
+                <div class="flex items-center"><span class="legend-dot dot-amber"></span><span class="text-[9px] text-slate-300 font-bold uppercase">Pending</span></div>
+            </div>
+
+            <button onclick="checkAuth()" class="bg-[#2a4b9b] hover:bg-[#1f3a7a] text-white text-[9px] font-bold px-4 py-2 rounded transition-colors border border-blue-400/20 uppercase tracking-wide shadow-lg shadow-blue-900/20">
+                ✎ Update
+            </button>
+        </div>
+    </header>
+
+    <div id="mainDashboard" class="flex-1 grid grid-cols-4 gap-3 min-h-0 pb-1">
+        </div>
+
+    <div id="passwordModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm fade-in">
+        <div class="glass-modal p-6 rounded-xl w-64 shadow-2xl border-l-2 border-l-[#3b82f6] text-center">
+            <h3 class="text-xs font-bold text-white mb-3 tracking-wide uppercase">Admin Access</h3>
+            <input type="password" id="authPassword" placeholder="Password" class="w-full p-2 rounded bg-[#1e293b] border border-slate-600 text-white text-center mb-3 focus:border-blue-500 text-xs">
+            <button onclick="submitPassword()" class="w-full bg-[#2a4b9b] hover:bg-blue-700 text-white py-1.5 rounded text-[10px] font-bold uppercase shadow-lg">Login</button>
+            <button onclick="closePasswordModal()" class="w-full mt-2 text-slate-500 hover:text-white text-[10px] uppercase">Cancel</button>
+        </div>
+    </div>
+
+    <div id="gridEditModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm fade-in">
+        <div class="glass-modal p-4 rounded-xl w-[95%] max-w-6xl shadow-2xl border-l-4 border-l-[#009ca6] h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-3 shrink-0 pb-2 border-b border-slate-700/50">
+                <h3 class="text-base font-bold text-white tracking-wide">Update Project Status</h3>
+                <div class="flex items-center gap-2">
+                    <select id="projectSelector" onchange="renderEditorForSelected()" class="px-3 py-1 rounded text-xs bg-[#1e293b] border border-slate-600 text-white font-bold w-56"></select>
+                    <button onclick="toggleGridEditModal()" class="text-slate-400 hover:text-white text-xl leading-none px-2">&times;</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll pr-1">
+                <div id="gridEditorContainer" class="grid gap-x-2 gap-y-3 pb-2"></div>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-700/50 mt-1 shrink-0">
+                <button onclick="saveGridData()" class="bg-[#10b981] hover:bg-emerald-600 text-white font-bold py-1.5 px-6 rounded text-xs uppercase tracking-wider shadow-lg">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isAuthenticated = false;
+        let currentFY = "25-26"; 
+        
+        // --- CONFIG ---
+        const standardRows = ["Q1", "Q2", "Q3", "Q4"];
+        const bsesRajRows = ["Aug", "Sep", "Oct", "Nov", "Dec"];
+        const bsesYamRows = ["Oct", "Nov", "Dec"];
+        const cols = ["SLA Signoff", "Docs Signoff", "PI Raised", "PI Approved", "TI Raised", "COL"]; 
+
+        function getRajnetRows(fy) {
+            return (fy === "25-26") 
+                ? ["Mar-May'25", "Jun-Aug'25", "Sep-Nov'25", "Dec-Feb'26"]
+                : ["Mar-May'24", "Jun-Aug'24", "Sep-Nov'24", "Dec-Feb'25"];
+        }
+
+        // --- DATA FACTORY ---
+        function getDefaultProjects(fy) {
+            const doneRow = () => Array(6).fill("Done");
+            const pendingRow = () => Array(6).fill("Pending");
+            const blankRow = () => Array(6).fill("-"); 
+            const hybridMahanetQ2 = () => ["Done", "Done", "Done", "Pending", "Pending", "Pending"]; 
+            const dynamicRajnet = getRajnetRows(fy);
+
+            // Base Projects List
+            let list = [
+                { id: 1, name: "NFS", rows: standardRows, color: "border-green", grid: [doneRow(), doneRow(), pendingRow(), blankRow()] },
+                { id: 2, name: "T-Fiber B", rows: standardRows, color: "border-teal", grid: [doneRow(), doneRow(), pendingRow(), blankRow()] },
+                { id: 3, name: "T-Fiber C", rows: standardRows, color: "border-cyan", grid: [doneRow(), doneRow(), pendingRow(), blankRow()] },
+                { id: 4, name: "PGCIL MPLS", rows: standardRows, color: "border-purple", grid: [pendingRow(), pendingRow(), pendingRow(), blankRow()] },
+                { id: 5, name: "PGCIL UNMS NR", rows: standardRows, color: "border-indigo", grid: [pendingRow(), pendingRow(), pendingRow(), blankRow()] },
+                { id: 6, name: "PGCIL UNMS NER", rows: standardRows, color: "border-pink", grid: [doneRow(), doneRow(), pendingRow(), blankRow()] },
+                { id: 7, name: "Tanfinet OnM", rows: standardRows, color: "border-orange", grid: [pendingRow(), pendingRow(), pendingRow(), blankRow()] },
+                { id: 8, name: "Mahanet", rows: standardRows, color: "border-red", grid: [doneRow(), hybridMahanetQ2(), pendingRow(), blankRow()] },
+                { id: 9, name: "Rajnet", rows: dynamicRajnet, color: "border-yellow", grid: [doneRow(), ["Done","Done","Done","Done","Done","Pending"], pendingRow(), blankRow()] },
+                { id: 10, name: "BSES Rajdhani", rows: bsesRajRows, color: "border-lime", grid: [doneRow(), doneRow(), doneRow(), pendingRow(), blankRow()] },
+                { id: 11, name: "BSES Yamuna", rows: bsesYamRows, color: "border-blue", grid: [doneRow(), pendingRow(), blankRow()] }
+            ];
+
+            // LOGIC: Disable specific projects for FY 24-25
+            if (fy === "24-25") {
+                const inactiveIDs = [5, 6, 10, 11]; // UNMS NR, UNMS NER, BSES Raj, BSES Yam
+                list = list.map(p => {
+                    if (inactiveIDs.includes(p.id)) {
+                        return { ...p, isInactive: true };
+                    }
+                    return p;
+                });
+            }
+
+            return list;
+        }
+
+        let projects = [];
+
+        function init() {
+            currentFY = document.getElementById('fySelector').value;
+            loadDataForFY(currentFY);
+            document.getElementById('authPassword').addEventListener('keypress', (e) => { if(e.key === 'Enter') submitPassword(); });
+        }
+
+        function switchFiscalYear() {
+            currentFY = document.getElementById('fySelector').value;
+            loadDataForFY(currentFY);
+        }
+
+        function loadDataForFY(fy) {
+            const storageKey = `invenia_data_v5_${fy}`;
+            const savedData = localStorage.getItem(storageKey);
+            
+            if (savedData) {
+                projects = JSON.parse(savedData);
+                // Ensure Rajnet labels update if switching years on existing data
+                const rajnet = projects.find(p => p.id === 9);
+                if (rajnet) rajnet.rows = getRajnetRows(fy);
+            } else {
+                projects = getDefaultProjects(fy);
+            }
+            renderDashboard();
+            updateModalSelector();
+        }
+
+        function updateModalSelector() {
+            const selector = document.getElementById('projectSelector');
+            selector.innerHTML = '';
+            projects.forEach((p, index) => {
+                const opt = document.createElement('option');
+                opt.value = index; opt.innerText = p.name; 
+                selector.appendChild(opt);
+            });
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('mainDashboard');
+            let html = ``;
+            
+            let headers = '';
+            cols.forEach(c => headers += `<th>${c}</th>`);
+
+            projects.forEach((p, index) => {
+                let content = '';
+
+                // CHECK IF INACTIVE (For FY 24-25)
+                if (p.isInactive) {
+                    content = `
+                        <div class="flex-1 flex flex-col items-center justify-center h-full opacity-50">
+                            <span class="text-[10px] text-slate-400 italic font-medium">Not Applicable in FY 24-25</span>
+                        </div>
+                    `;
+                } else {
+                    // RENDER TABLE
+                    let tableRows = '';
+                    p.rows.forEach((rowLabel, rIdx) => {
+                        let cells = '';
+                        for(let cIdx=0; cIdx<6; cIdx++) {
+                            const status = p.grid[rIdx] ? p.grid[rIdx][cIdx] : "Pending";
+                            let pillClass = "";
+                            if (status === "Done") pillClass = "pill-done";
+                            else if (status === "In Progress") pillClass = "pill-progress";
+                            else if (status === "Pending") pillClass = "pill-pending";
+                            else pillClass = "hidden"; 
+                            const content = (pillClass === "hidden") ? "" : `<span class="${pillClass}"></span>`;
+                            cells += `<td>${content}</td>`;
+                        }
+                        tableRows += `<tr><td>${rowLabel}</td>${cells}</tr>`;
+                    });
+
+                    content = `
+                        <div class="p-1 flex-1 flex flex-col">
+                            <table class="aesthetic-table h-full">
+                                <thead><tr><th></th>${headers}</tr></thead>
+                                <tbody>${tableRows}</tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="glass-card border-l-thick ${p.color} fade-in" style="animation-delay: ${index * 0.05}s">
+                        <div class="px-2 py-1.5 border-b border-slate-700/50 bg-[#1e293b]/40 flex justify-between items-center shrink-0">
+                            <h3 class="font-bold text-[10px] text-white tracking-wide uppercase truncate w-3/4" title="${p.name}">${p.name}</h3>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- AUTH & EDIT ---
+        function checkAuth() {
+            if (isAuthenticated) { renderEditorForSelected(); toggleGridEditModal(); } 
+            else { 
+                document.getElementById('authPassword').value = '';
+                document.getElementById('passwordModal').classList.remove('hidden');
+                document.getElementById('authPassword').focus(); 
+            }
+        }
+        function submitPassword() {
+            if (document.getElementById('authPassword').value === "admin123") {
+                isAuthenticated = true;
+                document.getElementById('passwordModal').classList.add('hidden');
+                renderEditorForSelected();
+                toggleGridEditModal();
+            } else { alert("Incorrect password"); }
+        }
+        function closePasswordModal() { document.getElementById('passwordModal').classList.add('hidden'); }
+        function toggleGridEditModal() { document.getElementById('gridEditModal').classList.toggle('hidden'); }
+
+        function renderEditorForSelected() {
+            const index = document.getElementById('projectSelector').value || 0;
+            const p = projects[index];
+            const container = document.getElementById('gridEditorContainer');
+            
+            container.innerHTML = '';
+
+            // Handle Inactive Project Editing
+            if (p.isInactive) {
+                container.innerHTML = `
+                    <div class="col-span-7 flex items-center justify-center h-40 text-slate-400 italic">
+                        This project is not active in ${currentFY}
+                    </div>`;
+                return;
+            }
+
+            container.className = "grid grid-cols-7 gap-2 items-center";
+            container.innerHTML += `<div class="text-[10px] font-bold text-slate-500 uppercase">Period</div>`;
+            cols.forEach(c => container.innerHTML += `<div class="text-[9px] font-bold text-slate-500 text-center uppercase truncate">${c}</div>`);
+
+            p.rows.forEach((rowLabel, rIdx) => {
+                container.innerHTML += `<div class="text-[10px] font-bold text-white truncate">${rowLabel}</div>`;
+                for(let cIdx=0; cIdx<6; cIdx++) {
+                    const currentVal = p.grid[rIdx] ? p.grid[rIdx][cIdx] : "-";
+                    const selectHTML = `
+                        <select id="cell-${index}-${rIdx}-${cIdx}" class="w-full text-[9px] p-1.5 rounded bg-[#1e293b] border border-slate-600 focus:border-teal-500 text-white cursor-pointer hover:bg-slate-800">
+                            <option value="-" ${currentVal === '-' ? 'selected' : ''}>- (Blank)</option>
+                            <option value="Pending" ${currentVal === 'Pending' ? 'selected' : ''} class="text-amber-500">Pending</option>
+                            <option value="In Progress" ${currentVal === 'In Progress' ? 'selected' : ''} class="text-blue-500">In Progress</option>
+                            <option value="Done" ${currentVal === 'Done' ? 'selected' : ''} class="text-emerald-500">Done</option>
+                        </select>
+                    `;
+                    container.innerHTML += `<div>${selectHTML}</div>`;
+                }
+            });
+        }
+
+        function saveGridData() {
+            const index = document.getElementById('projectSelector').value;
+            const p = projects[index];
+            
+            if (!p.isInactive) {
+                p.rows.forEach((_, rIdx) => {
+                    for(let cIdx=0; cIdx<6; cIdx++) {
+                        const val = document.getElementById(`cell-${index}-${rIdx}-${cIdx}`).value;
+                        if(!p.grid[rIdx]) p.grid[rIdx] = [];
+                        p.grid[rIdx][cIdx] = val;
+                    }
+                });
+            }
+            
+            const storageKey = `invenia_data_v5_${currentFY}`;
+            localStorage.setItem(storageKey, JSON.stringify(projects));
+
+            renderDashboard(); 
+            toggleGridEditModal();
+        }
+
+        init();
+    </script>
+</body>
+</html>
